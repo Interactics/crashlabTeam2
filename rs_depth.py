@@ -24,7 +24,7 @@ pipeline = rs.pipeline()
 config = rs.config()
 config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-bbox =  (200, 200, 300, 300)
+bbox =  (200, 200, 250, 300)
 
 # Start streaming
 profile = pipeline.start(config)
@@ -60,6 +60,7 @@ try:
 
         depth_image = np.asanyarray(aligned_depth_frame.get_data())
         color_image = np.asanyarray(color_frame.get_data())
+        
 
         # Render images
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
@@ -69,17 +70,13 @@ try:
         cv2.circle(images,(300,300),5,(0,0,255),-1)
         cv2.rectangle(images, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), (255, 255, 255), 2)
 
-        #measured_distance = aligned_depth_frame.get_distance(300,300)
-    
-        distance=0
-        for y in range(bbox[1], bbox[3]) :
-            for x in range(bbox[0],bbox[2]) : 
-                distance=distance+aligned_depth_frame.get_distance(x,y)
-        
-        mean_dist = distance/((bbox[3]-bbox[1])*(bbox[2]-bbox[0]))
-        print round(mean_dist,2)
-        #print round(measured_distance,2)
 
+
+        #measuring Bouding BOX distance
+    
+        distance=depth_image[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1].sum()/((bbox[3]-bbox[1])*(bbox[2]-bbox[0]))
+        distance = round(distance/1000,2)
+        print distance
 
 
         cv2.namedWindow('Align Example', cv2.WINDOW_AUTOSIZE)
