@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+
+import rospy
+import numpy as np
+
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+from darknet_ros_msgs.msg import BoundingBoxes
+
+import cv2
+
+def measuring_distance(image_data) :
+
+    bbox =  (200, 200, 250, 300)
+
+    bridge = CvBridge()
+    image = bridge.imgmsg_to_cv2(image_data, "16UC1")
+    np_image= np.asanyarray(image)
+
+    #measured distance of human
+    avg_distance=np_image[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1].sum()/((bbox[3]-bbox[1])*(bbox[2]-bbox[0]))
+    avg_distance = round(avg_distance/1000, 2)
+
+
+    print(avg_distance)
+    cv2.imshow("window", image)
+
+    cv2.waitKey(2);
+   
+   ### issue : image for measureing and image for Yolo is not mathced
+
+
+def print_yolo_bbox() :
+    rospy.init_node('print_bbox', anonymous = False)
+    
+    rospy.Subscriber("/darknet_ros/bounding_boxes", BoundingBoxes, callback)
+    rospy.Subscriber("/camera/aligned_depth_to_infra1/image_raw", Image, measuring_distance)
+
+    rospy.spin()
+
+
+def callback(data) :
+    rospy.loginfo("%s", type(data))
+
+    
+    rospy.loginfo("%d", len(data.bounding_boxes))
+
+    for target in data.bounding_boxes:
+        if target.Class == 'person':
+            # rospy.loginfo("hi")
+            rospy.loginfo("%d %d", target.xmin, target.ymin)
+
+
+
+    # rospy.loginfo("%s", data.bounding_boxes[0].Class)
+
+if __name__ =='__main__' :
+    print_yolo_bbox()
+    measuring_distance()
